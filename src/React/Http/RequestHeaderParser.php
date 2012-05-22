@@ -24,7 +24,6 @@ class RequestHeaderParser extends EventEmitter
             list($request, $bodyBuffer) = $this->parseRequest($this->buffer);
 
             $this->emit('headers', array($request, $bodyBuffer));
-            $this->removeAllListeners();
         }
     }
 
@@ -50,5 +49,10 @@ class RequestHeaderParser extends EventEmitter
         );
 
         return array($request, $bodyBuffer);
+    }
+
+    public function rewind()
+    {
+        $this->buffer = '';
     }
 }

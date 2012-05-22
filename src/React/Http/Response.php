@@ -11,6 +11,7 @@ class Response extends EventEmitter
     private $conn;
     private $headWritten = false;
     private $chunkedEncoding = true;
+    private $keepAlive = true;
 
     public function __construct(ConnectionInterface $conn)
     {
@@ -66,6 +67,9 @@ class Response extends EventEmitter
 
         $this->emit('end');
         $this->removeAllListeners();
-        $this->conn->end();
+
+        if (!$this->keepAlive) {
+            $this->conn->end();
+        }
     }
 }

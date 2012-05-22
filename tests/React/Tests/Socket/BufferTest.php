@@ -45,7 +45,7 @@ class BufferTest extends TestCase
 
         $buffer = new Buffer($socket, $loop);
         $buffer->on('error', $this->expectCallableNever());
-        $buffer->on('end', $this->expectCallableOnce());
+        $buffer->on('drain', $this->expectCallableOnce());
 
         $this->assertFalse($buffer->closed);
         $buffer->end();

@@ -26,21 +26,28 @@ class Server extends EventEmitter implements ServerInterface
             // TODO: chunked transfer encoding (also for outgoing data)
             // TODO: multipart parsing
 
-            $parser = new RequestHeaderParser();
-            $parser->on('headers', function (Request $request, $bodyBuffer) use ($server, $conn, $parser) {
-                $server->handleRequest($conn, $request, $bodyBuffer);
-
-                $conn->removeListener('data', array($parser, 'feed'));
-                $conn->on('data', function ($data) use ($request) {
-                    $request->emit('data', array($data));
-                });
-            });
-
-            $conn->on('data', array($parser, 'feed'));
+            $server->handleConnection($conn);
         });
     }
 
-    public function handleRequest(ConnectionInterface $conn, Request $request, $bodyBuffer)
+    public function handleConnection(ConnectionInterface $conn)
+    {
+        $server = $this;
+
+        $parser = new RequestHeaderParser();
+        $parser->on('headers', function (Request $request, $bodyBuffer) use ($server, $conn, $parser) {
+            $server->handleRequest($conn, $parser, $request, $bodyBuffer);
+
+            $conn->removeListener('data', array($parser, 'feed'));
+            $conn->on('data', function ($data) use ($request) {
+                $request->emit('data', array($data));
+            });
+        });
+
+        $conn->on('data', array($parser, 'feed'));
+    }
+
+    public function handleRequest(ConnectionInterface $conn, RequestHeaderParser $parser, Request $request, $bodyBuffer)
     {
         $response = new Response($conn);
         $response->on('end', array($request, 'end'));
@@ -48,6 +55,16 @@ class Server extends EventEmitter implements ServerInterface
         if (!$this->listeners('request')) {
             $response->end();
             return;
+        }
+
+        $headers = $request->getHeaders();
+        if (isset($headers['Connection']) && 'close' === $headers['Connection']) {
+            $parser->removeAllListeners();
+        } else {
+            $response->on('end', function () use ($conn, $parser) {
+                $parser->rewind();
+                $conn->on('data', array($parser, 'feed'));
+            });
         }
 
         $this->emit('request', array($request, $response));

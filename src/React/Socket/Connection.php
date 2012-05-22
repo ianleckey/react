@@ -60,7 +60,7 @@ class Connection extends EventEmitter implements ConnectionInterface
 
         $that = $this;
 
-        $this->buffer->on('end', function () use ($that) {
+        $this->buffer->on('drain', function () use ($that) {
             $that->close();
         });
 

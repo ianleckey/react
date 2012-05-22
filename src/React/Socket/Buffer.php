@@ -47,7 +47,7 @@ class Buffer extends EventEmitter
         $this->closed = true;
 
         if (!$this->listening) {
-            $this->emit('end');
+            $this->emit('drain');
         }
     }
 
@@ -74,10 +74,14 @@ class Buffer extends EventEmitter
             return;
         }
 
-        $this->data = substr($this->data, $sent);
+        if ($sent === strlen($this->data)) {
+            $this->data = '';
+        } else {
+            $this->data = substr($this->data, $sent);
+        }
 
         if (0 === strlen($this->data)) {
-            $this->emit('end');
+            $this->emit('drain');
         }
     }
 }
