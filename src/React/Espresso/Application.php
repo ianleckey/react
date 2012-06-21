@@ -6,19 +6,18 @@ use React\Http\Request;
 use React\Http\Response;
 use Silex\Application as BaseApplication;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
-use Silex\Route as Route;
 
 class Application extends BaseApplication
 {
-    public $route;
-
     public function __construct()
     {
         parent::__construct();
-        $this->route = new Route();
-        $this['controllers'] = $this->share(function () {
-            return new ControllerCollection($this->route);
-        });
+
+        $app = $this;
+
+        $this['controllers_factory'] = function () use ($app) {
+            return new ControllerCollection($app['route_factory']);
+        };
     }
 
     public function __invoke(Request $request, Response $response)
